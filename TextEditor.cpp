@@ -3158,3 +3158,50 @@ const TextEditor::LanguageDefinition& TextEditor::LanguageDefinition::Lua()
 	}
 	return langDef;
 }
+const TextEditor::LanguageDefinition& TextEditor::LanguageDefinition::XML()
+{
+    static bool inited = false;
+    static LanguageDefinition langDef;
+    if (!inited)
+    {
+        // XML doesn't have traditional keywords, but we can highlight common tags or directives
+        static const char* const keywords[] = {
+            "xml", "DOCTYPE", "CDATA", "schema", "element", "attribute", "xs", "xsi", "version", "encoding"
+        };
+
+        for (auto& k : keywords)
+            langDef.mKeywords.insert(k);
+
+        // Common XML attributes and built-in identifiers
+        static const char* const identifiers[] = {
+            "id", "name", "type", "value", "href", "src", "lang", "xmlns", "xsi:schemaLocation", "xsi:noNamespaceSchemaLocation"
+        };
+
+        for (auto& k : identifiers)
+        {
+            Identifier id;
+            id.mDeclaration = "Attribute";
+            langDef.mIdentifiers.insert(std::make_pair(std::string(k), id));
+        }
+
+        // Token regex patterns
+        langDef.mTokenRegexStrings.push_back(std::make_pair<std::string, PaletteIndex>("\"(\\\\.|[^\\\"])*\"", PaletteIndex::String)); // Double-quoted strings
+        langDef.mTokenRegexStrings.push_back(std::make_pair<std::string, PaletteIndex>("'[^']*'", PaletteIndex::String)); // Single-quoted strings
+        langDef.mTokenRegexStrings.push_back(std::make_pair<std::string, PaletteIndex>("</?[a-zA-Z_:][a-zA-Z0-9_:\\-\\.]*", PaletteIndex::Keyword)); // Tags
+        langDef.mTokenRegexStrings.push_back(std::make_pair<std::string, PaletteIndex>("[a-zA-Z_:][a-zA-Z0-9_:\\-\\.]*", PaletteIndex::Identifier)); // Identifiers
+        langDef.mTokenRegexStrings.push_back(std::make_pair<std::string, PaletteIndex>("[\\<\\>\\/\\=]", PaletteIndex::Punctuation)); // Punctuation
+
+        // XML comments
+        langDef.mCommentStart = "<!--";
+        langDef.mCommentEnd = "-->";
+        langDef.mSingleLineComment.clear(); // XML doesn't have single-line comments
+
+        langDef.mCaseSensitive = true;
+        langDef.mAutoIndentation = true;
+
+        langDef.mName = "XML";
+
+        inited = true;
+    }
+    return langDef;
+}
